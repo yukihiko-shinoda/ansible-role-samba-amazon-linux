@@ -1,0 +1,31 @@
+---
+- name: install Samba4 because Windows 10 no longer support SMB1 protocol
+  yum:
+    name: samba4
+
+- name: enable Samba on boot
+  service:
+    name: smb
+    enabled: yes
+
+- name: set wrokgroup for Samba
+  replace:
+    path: /etc/samba/smb.conf
+    regexp: ^\s.workgroup\s.=\s.*.
+    replace: "        workgroup = WORKGROUP"
+  notify: restart samba
+
+- name: add share directory setting for Samba
+  blockinfile:
+    path: /etc/samba/smb.conf
+    block: |
+      [workspace]
+          path = /home/vagrant/workspace
+          public = yes
+          writable = yes
+          printable = no
+  notify: restart samba
+
+- name: register Smaba user
+  shell: "echo -e \"{{ samba_user_password }}\n{{ samba_user_password }}\" | pdbedit -a -t -u {{ roles_common_deploy_user }}"
+  notify: restart samba
