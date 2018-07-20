@@ -15,15 +15,24 @@
     replace: "        workgroup = WORKGROUP"
   notify: restart samba
 
+- name: get current DocumentRoot
+  shell: grep "^DocumentRoot" /etc/httpd/conf/httpd.conf | awk '{print $2}' | sed -e 's/^"//' -e 's/"$//'
+  ignore_errors: yes
+  register: current_document_root
+
+- name: set Samba config for workspace
+  template:
+    src: smb.conf.workspace.j2
+    dest: /etc/samba/smb.conf.workspace
+    owner: root
+    group: root
+    mode: 0644
+
 - name: add share directory setting for Samba
   blockinfile:
     path: /etc/samba/smb.conf
     block: |
-      [workspace]
-          path = /home/vagrant/workspace
-          public = yes
-          writable = yes
-          printable = no
+      include = /etc/samba/smb.conf.workspace
   notify: restart samba
 
 - name: register Smaba user
